@@ -1,0 +1,85 @@
+{
+    "name": "TransformCSV",
+    "properties": {
+        "type": "MappingDataFlow",
+        "typeProperties": {
+            "sources": [
+                {
+                    "dataset": {
+                        "referenceName": "datasetTransformation",
+                        "type": "DatasetReference"
+                    },
+                    "name": "sourceCSV"
+                }
+            ],
+            "sinks": [
+                {
+                    "dataset": {
+                        "referenceName": "MaxPurchasedProductByCustomers",
+                        "type": "DatasetReference"
+                    },
+                    "name": "sinkDataset"
+                }
+            ],
+            "transformations": [
+                {
+                    "name": "selectColumns"
+                },
+                {
+                    "name": "filterCustomerID10"
+                },
+                {
+                    "name": "splitBasedOnPayment"
+                },
+                {
+                    "name": "ReplacedNULLPayment"
+                },
+                {
+                    "name": "CustomersMaxPurchasedProduct"
+                }
+            ],
+            "scriptLines": [
+                "source(output(",
+                "          transaction_id as short,",
+                "          transactional_date as timestamp,",
+                "          product_id as string,",
+                "          customer_id as short,",
+                "          payment as string,",
+                "          credit_card as long,",
+                "          loyalty_card as boolean,",
+                "          cost as double,",
+                "          quantity as short,",
+                "          price as double,",
+                "          {_c10} as string",
+                "     ),",
+                "     allowSchemaDrift: true,",
+                "     validateSchema: false,",
+                "     ignoreNoFilesFound: false) ~> sourceCSV",
+                "sourceCSV select(mapColumn(",
+                "          transaction_id,",
+                "          transactional_date,",
+                "          product_id,",
+                "          customer_id,",
+                "          payment,",
+                "          price",
+                "     ),",
+                "     skipDuplicateMapInputs: true,",
+                "     skipDuplicateMapOutputs: true) ~> selectColumns",
+                "selectColumns filter(customer_id != 10) ~> filterCustomerID10",
+                "filterCustomerID10 split(payment == 'visa',",
+                "     payment == \"mastercard\",",
+                "     disjoint: false) ~> splitBasedOnPayment@(VisaCustomers, MastercardCustomers, AmexCustomers)",
+                "splitBasedOnPayment@AmexCustomers derive(payment = coalesce(payment, \"N/A\")) ~> ReplacedNULLPayment",
+                "splitBasedOnPayment@VisaCustomers aggregate(groupBy(customer_id),",
+                "     product_id = max(product_id)) ~> CustomersMaxPurchasedProduct",
+                "CustomersMaxPurchasedProduct sink(allowSchemaDrift: true,",
+                "     validateSchema: false,",
+                "     umask: 0022,",
+                "     preCommands: [],",
+                "     postCommands: [],",
+                "     skipDuplicateMapInputs: true,",
+                "     skipDuplicateMapOutputs: true) ~> sinkDataset"
+            ]
+        }
+    }
+}
