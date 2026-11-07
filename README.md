@@ -75,20 +75,20 @@ sourceCSV → selectColumns → filterCustomerID10 → split by payment type →
 ## Azure services used
 
 - Azure Data Factory (pipelines, Execute Pipeline, Mapping Data Flows)
-- Azure Blob Storage
+- Azure Data Lake Storage Gen2
 
 ## Concepts practiced
 
 - Parent and child pipelines with **Execute Pipeline**
 - Chaining activities on success (copy first, delete only after a successful copy)
-- Copying from an HTTP source (GitHub raw file) into Blob Storage
+- Copying from an HTTP source (GitHub raw file) into Azure Data Lake Storage Gen2
 - Get Metadata, ForEach, and If Condition
 - Mapping Data Flow: select, filter, conditional split, aggregate, derived column, sink
 
 ## How to recreate it
 
 1. Create three containers: `source`, `destination`, `reporting`. Upload `Data.csv` to `source`.
-2. Create linked services and datasets for Blob Storage and for the GitHub raw file (HTTP).
+2. Create linked services and datasets for Azure Data Lake Storage Gen2 and for the GitHub raw file (HTTP).
 3. Build `PipelineGit`: one Copy data activity from the GitHub raw URL to `destination`.
 4. Build the data flow `TransformCSV` and the pipeline `PipelineForReportingContainer` (Get Metadata → ForEach with If Condition → Data flow).
 5. Build `ParentPipeline`: Copy data → Delete → Execute Pipeline (`PipelineGit`) → Execute Pipeline (`PipelineForReportingContainer`). Link each activity to the next with the green **On success** arrow.
